@@ -1,49 +1,50 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useRef, useState } from 'react';
 import {
+  Linking,
   Pressable,
   StyleSheet,
+  Text,
   useWindowDimensions,
   View,
 } from 'react-native';
-import { useAudioRecorder } from '../audio/useAudioRecorder';
-import { createHeuristicLaughterDetector } from '../detection/heuristicLaughterDetector';
-import type { RecordingState } from '../types/recordingState';
+import { useRecordingSession } from '../hooks/useRecordingSession';
 
 export function LaughterScreen() {
   const { height } = useWindowDimensions();
-  const [recordingState, setRecordingState] = useState<RecordingState>('idle');
-  // Meter fill 0..1. Idle/Completed: holds previous; Recording: fills during session.
-  const [laughterLevel, setLaughterLevel] = useState(0);
-
-  const detectorRef = useRef(createHeuristicLaughterDetector());
-  const { startRecording } = useAudioRecorder();
-
-  const handleStartSession = useCallback(() => {
-    setLaughterLevel(0);
-    setRecordingState('recording');
-    detectorRef.current.reset();
-    startRecording({
-      onLevel: (level) => {
-        const score = detectorRef.current.processLevel(level);
-        setLaughterLevel(score);
-      },
-      onComplete: () => setRecordingState('completed'),
-      onError: () => setRecordingState('idle'),
-    });
-  }, [startRecording]);
-
-  const handleMicPress = () => {
-    if (recordingState === 'idle' || recordingState === 'completed') {
-      handleStartSession();
-    } else if (recordingState === 'recording') {
-      // Tap during recording: stop immediately, start fresh 5s session
-      handleStartSession();
-    }
-  };
+  const {
+    handleMicPress,
+    recordingState,
+    laughterLevel,
+    permissionStatus,
+  } = useRecordingSession();
 
   const meterHeight = Math.max(0, laughterLevel * height);
+
+  // Minimal fallback UI when microphone permission is denied
+  if (permissionStatus === 'denied') {
+    return (
+      <View style={styles.container}>
+        <StatusBar style="light" />
+        <View style={styles.permissionFallback}>
+          <Text style={styles.permissionText}>
+            Microphone access is required to measure laughter.
+          </Text>
+          <Pressable
+            style={({ pressed }) => [
+              styles.settingsButton,
+              pressed && styles.micButtonPressed,
+            ]}
+            onPress={() => Linking.openSettings()}
+            accessibilityLabel="Open app settings"
+            accessibilityRole="button"
+          >
+            <Text style={styles.settingsButtonText}>Open Settings</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -100,5 +101,27 @@ const styles = StyleSheet.create({
   },
   micButtonPressed: {
     opacity: 0.8,
+  },
+  permissionFallback: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    gap: 24,
+  },
+  permissionText: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  settingsButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: '#333',
+    borderRadius: 8,
+  },
+  settingsButtonText: {
+    color: '#fff',
+    fontSize: 16,
   },
 });

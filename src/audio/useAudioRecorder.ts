@@ -1,5 +1,6 @@
 import { Audio } from 'expo-av';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState, type AppStateStatus } from 'react-native';
 
 /** dB range we care about: -30 dB maps to 0, 0 dB maps to 1. */
 const METERING_MIN_DB = -30;
@@ -25,6 +26,8 @@ export interface RecordingOptions {
   onError?: (error: Error) => void;
 }
 
+export type PermissionStatus = 'undetermined' | 'granted' | 'denied';
+
 export interface UseAudioRecorderReturn {
   /** Start a new 5-second recording. Stops any in-progress session first. */
   startRecording: (options?: RecordingOptions) => Promise<void>;
@@ -32,6 +35,8 @@ export interface UseAudioRecorderReturn {
   stopRecording: () => Promise<void>;
   /** Whether a recording session is currently active. */
   isRecording: boolean;
+  /** Microphone permission status. */
+  permissionStatus: PermissionStatus;
 }
 
 const DEFAULT_DURATION_MS = 5000;
@@ -42,6 +47,29 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const optionsRef = useRef<RecordingOptions | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [permissionStatus, setPermissionStatus] =
+    useState<PermissionStatus>('undetermined');
+
+  const checkPermission = useCallback(async () => {
+    const { status } = await Audio.getPermissionsAsync();
+    setPermissionStatus(
+      status === 'granted' ? 'granted' : status === 'denied' ? 'denied' : 'undetermined'
+    );
+  }, []);
+
+  useEffect(() => {
+    checkPermission();
+  }, [checkPermission]);
+
+  useEffect(() => {
+    const handleAppStateChange = (nextState: AppStateStatus) => {
+      if (nextState === 'active') {
+        checkPermission();
+      }
+    };
+    const sub = AppState.addEventListener('change', handleAppStateChange);
+    return () => sub.remove();
+  }, [checkPermission]);
 
   const stopCurrentRecording = useCallback(
     async (notifyComplete = true): Promise<void> => {
@@ -76,10 +104,12 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
       if (status !== 'granted') {
         const { status: newStatus } = await Audio.requestPermissionsAsync();
         if (newStatus !== 'granted') {
+          setPermissionStatus('denied');
           options.onError?.(new Error('Microphone permission denied'));
           return;
         }
       }
+      setPermissionStatus('granted');
 
       try {
         await Audio.setAudioModeAsync({
@@ -107,6 +137,16 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
           LEVEL_UPDATE_INTERVAL_MS
         );
 
+        // Superseded by a newer tap-to-restart: don't use this recording
+        if (optionsRef.current === null) {
+          try {
+            await recording.stopAndUnloadAsync();
+          } catch {
+            // Ignore cleanup errors
+          }
+          return;
+        }
+
         recordingRef.current = recording;
         setIsRecording(true);
 
@@ -130,5 +170,6 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     startRecording,
     stopRecording,
     isRecording,
+    permissionStatus,
   };
 }
