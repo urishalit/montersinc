@@ -14,6 +14,9 @@ import { useRecordingSession } from '../hooks/useRecordingSession';
 const BAR_HEIGHT = 18;
 const BAR_GAP = 4;
 const RISE_DELAY_MS = 60;
+const FRAME_COLOR = '#3d3d3d';
+const POLARITY_COLOR = '#ffd54f';
+const FILL_COLOR = '#c00';
 
 export function LaughterScreen() {
   const { height } = useWindowDimensions();
@@ -95,21 +98,27 @@ export function LaughterScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      {/* Segmented bars from bottom to top */}
-      <View style={styles.meterContainer}>
-        {Array.from({ length: segmentCount }, (_, i) => {
-          const isFilled = i < filledCount;
-          return (
-            <View
-              key={i}
-              style={[
-                styles.meterBar,
-                { height: BAR_HEIGHT, marginBottom: i < segmentCount - 1 ? BAR_GAP : 0 },
-                isFilled && styles.meterBarFilled,
-              ]}
-            />
-          );
-        })}
+      {/* Meter: programmatic battery-style frame */}
+      <View style={styles.meterWrapper}>
+        <View style={styles.meterFrame}>
+          <Text style={styles.polarity}>+</Text>
+          <View style={styles.barsContainer}>
+            {Array.from({ length: segmentCount }, (_, i) => {
+              const isFilled = i < filledCount;
+              return (
+                <View
+                  key={i}
+                  style={[
+                    styles.meterBar,
+                    { height: BAR_HEIGHT, marginBottom: i < segmentCount - 1 ? BAR_GAP : 0 },
+                    isFilled && styles.meterBarFilled,
+                  ]}
+                />
+              );
+            })}
+          </View>
+          <Text style={styles.polarity}>−</Text>
+        </View>
       </View>
       {/* Centered mic button */}
       <Pressable
@@ -139,19 +148,40 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  meterContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+  meterWrapper: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  meterFrame: {
+    width: '100%',
+    flex: 1,
+    borderWidth: 6,
+    borderColor: FRAME_COLOR,
+    borderRadius: 20,
+    backgroundColor: 'transparent',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+  },
+  polarity: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: POLARITY_COLOR,
+    textAlign: 'center',
+    marginVertical: 4,
+  },
+  barsContainer: {
+    flex: 1,
     flexDirection: 'column-reverse',
+    overflow: 'hidden',
   },
   meterBar: {
     width: '100%',
     backgroundColor: 'transparent',
   },
   meterBarFilled: {
-    backgroundColor: '#c00',
+    backgroundColor: FILL_COLOR,
   },
   micButton: {
     width: 88,
