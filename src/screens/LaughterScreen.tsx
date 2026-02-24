@@ -153,6 +153,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
+    backgroundColor: '#ffeb3b',
   },
   meterFrame: {
     width: '100%',
@@ -160,7 +161,7 @@ const styles = StyleSheet.create({
     borderWidth: 6,
     borderColor: FRAME_COLOR,
     borderRadius: 20,
-    backgroundColor: 'transparent',
+    backgroundColor: '#000',
     paddingVertical: 12,
     paddingHorizontal: 8,
   },
