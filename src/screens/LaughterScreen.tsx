@@ -28,7 +28,9 @@ export function LaughterScreen() {
   } = useRecordingSession();
 
   const segmentHeight = BAR_HEIGHT + BAR_GAP;
-  const segmentCount = Math.floor(height / segmentHeight);
+  // Only create bars that fit inside the battery (between + and - signs)
+  const batteryContentHeight = height * 0.7;
+  const segmentCount = Math.max(4, Math.floor(batteryContentHeight / segmentHeight));
   const targetFilledCount = Math.round(laughterLevel * segmentCount);
   const [displayedFilledCount, setDisplayedFilledCount] = useState(0);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -101,7 +103,9 @@ export function LaughterScreen() {
       {/* Meter: programmatic battery-style frame */}
       <View style={styles.meterWrapper}>
         <View style={styles.meterFrame}>
-          <Text style={styles.polarity}>+</Text>
+          <View style={styles.polarityTop}>
+            <Text style={styles.polarity}>+</Text>
+          </View>
           <View style={styles.barsContainer}>
             {Array.from({ length: segmentCount }, (_, i) => {
               const isFilled = i < filledCount;
@@ -117,7 +121,9 @@ export function LaughterScreen() {
               );
             })}
           </View>
-          <Text style={styles.polarity}>−</Text>
+          <View style={styles.polarityBottom}>
+            <Text style={styles.polarity}>−</Text>
+          </View>
         </View>
       </View>
       {/* Centered mic button */}
@@ -152,7 +158,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    padding: 12,
     backgroundColor: '#ffeb3b',
   },
   meterFrame: {
@@ -164,18 +170,34 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     paddingVertical: 12,
     paddingHorizontal: 8,
+    overflow: 'hidden',
+  },
+  polarityTop: {
+    height: 40,
+    justifyContent: 'center',
+    zIndex: 2,
+  },
+  polarityBottom: {
+    position: 'absolute',
+    bottom: 12,
+    left: 8,
+    right: 8,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2,
   },
   polarity: {
     fontSize: 28,
     fontWeight: '700',
     color: POLARITY_COLOR,
     textAlign: 'center',
-    marginVertical: 4,
   },
   barsContainer: {
     flex: 1,
     flexDirection: 'column-reverse',
     overflow: 'hidden',
+    marginBottom: 44,
   },
   meterBar: {
     width: '100%',
