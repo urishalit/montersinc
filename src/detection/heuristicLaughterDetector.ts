@@ -4,7 +4,7 @@ import type { LaughterDetector } from './laughterDetector';
 const DEFAULT_WINDOW_SIZE = 4;
 
 /** Smoothing factor for moving average (0..1, higher = more responsive). */
-const SMOOTHING_ALPHA = 0.85;
+const SMOOTHING_ALPHA = 0.9;
 
 /** Weight for energy vs variability in final score (0..1). */
 const ENERGY_WEIGHT = 0.7;
@@ -17,16 +17,16 @@ const VARIABILITY_WEIGHT = 0.3;
 const NOISE_FLOOR = 0;
 
 /** Consecutive samples above floor required before passing sound (filters speech peaks). */
-const CONSECUTIVE_ABOVE_FLOOR_REQUIRED = 3;
+const CONSECUTIVE_ABOVE_FLOOR_REQUIRED = 2;
 
 /** Gated level above this = "active" (counting toward sustained ratio). */
-const ACTIVE_THRESHOLD = 0.2;
+const ACTIVE_THRESHOLD = 0.12;
 
 /** Raw score above this = "very loud" (unlocks 50%+ without sustained time). */
-const VERY_LOUD_THRESHOLD = 0.78;
+const VERY_LOUD_THRESHOLD = 0.5;
 
 /** Fraction of session with sound required to unlock 50%+ (when not very loud). */
-const SUSTAINED_RATIO_REQUIRED = 0.75;
+const SUSTAINED_RATIO_REQUIRED = 0.45;
 
 /**
  * Maps level through noise gate: below threshold → 0, above → rescaled to 0..1.
@@ -90,11 +90,11 @@ export function createHeuristicLaughterDetector(
       // Variability: standard deviation of recent levels (short-term variability proxy)
       let variability = 0;
       if (levelBuffer.length >= 2) {
-        const mean = energy;
+        const bufMean = recentMean;
         const variance =
-          levelBuffer.reduce((sum, v) => sum + (v - mean) ** 2, 0) /
+          levelBuffer.reduce((sum, v) => sum + (v - bufMean) ** 2, 0) /
           levelBuffer.length;
-        variability = Math.min(1, Math.sqrt(variance) * 4);
+        variability = Math.min(1, Math.sqrt(variance) * 5);
       }
 
       const rawScore =

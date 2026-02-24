@@ -1,5 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect, useRef, useState } from 'react';
 import {
   Linking,
   Pressable,
@@ -10,6 +11,10 @@ import {
 } from 'react-native';
 import { useRecordingSession } from '../hooks/useRecordingSession';
 
+const BAR_HEIGHT = 18;
+const BAR_GAP = 4;
+const RISE_DELAY_MS = 60;
+
 export function LaughterScreen() {
   const { height } = useWindowDimensions();
   const {
@@ -19,7 +24,48 @@ export function LaughterScreen() {
     permissionStatus,
   } = useRecordingSession();
 
-  const meterHeight = Math.max(0, laughterLevel * height);
+  const segmentHeight = BAR_HEIGHT + BAR_GAP;
+  const segmentCount = Math.floor(height / segmentHeight);
+  const targetFilledCount = Math.round(laughterLevel * segmentCount);
+  const [displayedFilledCount, setDisplayedFilledCount] = useState(0);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const targetRef = useRef(targetFilledCount);
+  targetRef.current = targetFilledCount;
+
+  useEffect(() => {
+    const target = targetFilledCount;
+    if (target === 0) {
+      setDisplayedFilledCount(0);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      return;
+    }
+    if (target <= displayedFilledCount) {
+      return;
+    }
+    const scheduleNext = () => {
+      setDisplayedFilledCount((prev) => {
+        const t = targetRef.current;
+        if (prev >= t) return prev;
+        const next = prev + 1;
+        if (next < t) {
+          timeoutRef.current = setTimeout(scheduleNext, RISE_DELAY_MS);
+        }
+        return next;
+      });
+    };
+    timeoutRef.current = setTimeout(scheduleNext, RISE_DELAY_MS);
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, [targetFilledCount]);
+
+  const filledCount = displayedFilledCount;
 
   // Minimal fallback UI when microphone permission is denied
   if (permissionStatus === 'denied') {
@@ -49,8 +95,22 @@ export function LaughterScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      {/* Red vertical fill from bottom to top */}
-      <View style={[styles.meter, { height: meterHeight }]} />
+      {/* Segmented bars from bottom to top */}
+      <View style={styles.meterContainer}>
+        {Array.from({ length: segmentCount }, (_, i) => {
+          const isFilled = i < filledCount;
+          return (
+            <View
+              key={i}
+              style={[
+                styles.meterBar,
+                { height: BAR_HEIGHT, marginBottom: i < segmentCount - 1 ? BAR_GAP : 0 },
+                isFilled && styles.meterBarFilled,
+              ]}
+            />
+          );
+        })}
+      </View>
       {/* Centered mic button */}
       <Pressable
         style={({ pressed }) => [
@@ -79,13 +139,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  meter: {
+  meterContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
+    flexDirection: 'column-reverse',
+  },
+  meterBar: {
+    width: '100%',
+    backgroundColor: 'transparent',
+  },
+  meterBarFilled: {
     backgroundColor: '#c00',
-    minHeight: 0,
   },
   micButton: {
     width: 88,

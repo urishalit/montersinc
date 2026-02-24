@@ -2,9 +2,9 @@ import { Audio } from 'expo-av';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 
-/** dB range we care about: -30 dB maps to 0, 0 dB maps to 1. */
-const METERING_MIN_DB = -30;
-const METERING_RANGE_DB = 30;
+/** dB range we care about: -50 dB maps to 0, 0 dB maps to 1 (wider range for quieter laughter). */
+const METERING_MIN_DB = -50;
+const METERING_RANGE_DB = 50;
 
 /**
  * Normalizes metering from dB (-30 to 0) to 0..1.
@@ -41,6 +41,9 @@ export interface UseAudioRecorderReturn {
 
 const DEFAULT_DURATION_MS = 5000;
 const LEVEL_UPDATE_INTERVAL_MS = 50;
+
+/** Set to true to log metering values during recording (for tuning). */
+const DEBUG_METERING = __DEV__ && false;
 
 export function useAudioRecorder(): UseAudioRecorderReturn {
   const recordingRef = useRef<Audio.Recording | null>(null);
@@ -125,6 +128,9 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
 
         const onStatus = (status: Audio.RecordingStatus) => {
           const level = normalizeMetering(status.metering);
+          if (DEBUG_METERING) {
+            console.log('[Metering] raw:', status.metering, 'normalized:', level.toFixed(3));
+          }
           optionsRef.current?.onLevel?.(level);
         };
 
