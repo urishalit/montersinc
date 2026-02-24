@@ -106,7 +106,9 @@ export function LaughterScreen() {
       {/* Meter: programmatic battery-style frame */}
       <View style={styles.meterWrapper}>
         <View style={styles.meterFrame}>
-          <View style={styles.polarityTop}>
+          <View style={[styles.sideBar, styles.sideBarLeft]} />
+          <View style={[styles.sideBar, styles.sideBarRight]} />
+          <View style={styles.header}>
             <Text style={styles.polarity}>+</Text>
           </View>
           <View style={styles.barsWrapper}>
@@ -160,7 +162,7 @@ export function LaughterScreen() {
               ))}
             </View>
           </View>
-          <View style={styles.polarityBottom}>
+          <View style={styles.footer}>
             <Text style={styles.polarity}>−</Text>
           </View>
         </View>
@@ -211,20 +213,47 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     overflow: 'hidden',
   },
-  polarityTop: {
-    height: 40,
-    justifyContent: 'center',
+  sideBar: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 30,
+    backgroundColor: FRAME_COLOR,
     zIndex: 2,
   },
-  polarityBottom: {
-    position: 'absolute',
-    bottom: 12,
-    left: 8,
-    right: 8,
-    height: 40,
+  sideBarLeft: {
+    left: 0,
+    borderTopLeftRadius: 14,
+    borderBottomLeftRadius: 14,
+  },
+  sideBarRight: {
+    right: 0,
+    borderTopRightRadius: 14,
+    borderBottomRightRadius: 14,
+  },
+  header: {
+    backgroundColor: FRAME_COLOR,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 2,
+    marginHorizontal: -8,
+    marginTop: -12,
+    borderTopLeftRadius: 14,
+    borderTopRightRadius: 14,
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: FRAME_COLOR,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderBottomLeftRadius: 14,
+    borderBottomRightRadius: 14,
   },
   polarity: {
     fontSize: 28,
@@ -234,7 +263,7 @@ const styles = StyleSheet.create({
   },
   barsWrapper: {
     flex: 1,
-    marginBottom: 44,
+    marginBottom: 56,
   },
   trianglesLeft: {
     position: 'absolute',
