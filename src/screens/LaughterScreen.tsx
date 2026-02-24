@@ -19,7 +19,10 @@ const POLARITY_COLOR = '#ffd54f';
 const FILL_COLOR = '#c00';
 
 export function LaughterScreen() {
-  const { height } = useWindowDimensions();
+  const { height, width } = useWindowDimensions();
+  const batteryWidth = width - 48;
+  const triangleBase = batteryWidth * 0.33;
+  const triangleHeight = triangleBase * 0.6;
   const {
     handleMicPress,
     recordingState,
@@ -106,20 +109,56 @@ export function LaughterScreen() {
           <View style={styles.polarityTop}>
             <Text style={styles.polarity}>+</Text>
           </View>
-          <View style={styles.barsContainer}>
-            {Array.from({ length: segmentCount }, (_, i) => {
-              const isFilled = i < filledCount;
-              return (
-                <View
-                  key={i}
-                  style={[
-                    styles.meterBar,
-                    { height: BAR_HEIGHT, marginBottom: i < segmentCount - 1 ? BAR_GAP : 0 },
-                    isFilled && styles.meterBarFilled,
-                  ]}
-                />
-              );
-            })}
+          <View style={styles.barsWrapper}>
+            <View style={styles.barsContainer}>
+              {Array.from({ length: segmentCount }, (_, i) => {
+                const isFilled = i < filledCount;
+                return (
+                  <View
+                    key={i}
+                    style={[
+                      styles.meterBar,
+                      { height: BAR_HEIGHT, marginBottom: i < segmentCount - 1 ? BAR_GAP : 0 },
+                      isFilled && styles.meterBarFilled,
+                    ]}
+                  />
+                );
+              })}
+            </View>
+            <View style={[styles.trianglesLeft, { width: triangleBase }]} pointerEvents="none">
+              {[0, 1, 2].map((i) => (
+                <View key={i} style={styles.triangleSlot}>
+                  <View
+                    style={[
+                      styles.triangle,
+                      styles.triangleRight,
+                      {
+                        borderLeftWidth: triangleBase,
+                        borderTopWidth: triangleHeight,
+                        borderBottomWidth: triangleHeight,
+                      },
+                    ]}
+                  />
+                </View>
+              ))}
+            </View>
+            <View style={[styles.trianglesRight, { width: triangleBase }]} pointerEvents="none">
+              {[0, 1, 2].map((i) => (
+                <View key={i} style={styles.triangleSlot}>
+                  <View
+                    style={[
+                      styles.triangle,
+                      styles.triangleLeft,
+                      {
+                        borderRightWidth: triangleBase,
+                        borderTopWidth: triangleHeight,
+                        borderBottomWidth: triangleHeight,
+                      },
+                    ]}
+                  />
+                </View>
+              ))}
+            </View>
           </View>
           <View style={styles.polarityBottom}>
             <Text style={styles.polarity}>−</Text>
@@ -193,11 +232,48 @@ const styles = StyleSheet.create({
     color: POLARITY_COLOR,
     textAlign: 'center',
   },
+  barsWrapper: {
+    flex: 1,
+    marginBottom: 44,
+  },
+  trianglesLeft: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'space-evenly',
+    zIndex: 1,
+  },
+  trianglesRight: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'space-evenly',
+    zIndex: 1,
+  },
+  triangleSlot: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  triangle: {
+    width: 0,
+    height: 0,
+    borderTopColor: 'transparent',
+    borderBottomColor: 'transparent',
+  },
+  triangleRight: {
+    borderLeftColor: FRAME_COLOR,
+  },
+  triangleLeft: {
+    borderRightColor: FRAME_COLOR,
+  },
   barsContainer: {
     flex: 1,
     flexDirection: 'column-reverse',
     overflow: 'hidden',
-    marginBottom: 44,
+    width: '100%',
   },
   meterBar: {
     width: '100%',
